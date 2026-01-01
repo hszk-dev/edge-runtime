@@ -3,3 +3,15 @@
 .DS_Store
 *.swp
 conversation.md
+
+# Examples build artifacts
+examples/rust/*/target/
+examples/assemblyscript/node_modules/
+examples/assemblyscript/build/
+examples/zig/**/*.wasm
+examples/zig/**/*.o
+
+# Generated test modules (keep hand-written ones)
+test-modules/*_rust.wasm
+test-modules/hello_asc.wasm
+test-modules/hello_zig.wasm
