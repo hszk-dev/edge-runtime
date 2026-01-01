@@ -11,7 +11,7 @@ use tracing::info;
 
 use edge_runtime_common::{RuntimeConfig, RuntimeError};
 
-use crate::router::build_router;
+use crate::router::{AdminRouterConfig, build_router_with_admin};
 use crate::state::AppState;
 
 /// Configuration for the HTTP server.
@@ -80,6 +80,8 @@ pub struct EdgeServer {
     state: AppState,
     /// Server configuration.
     config: ServerConfig,
+    /// Optional Admin API configuration.
+    admin_config: Option<AdminRouterConfig>,
 }
 
 impl EdgeServer {
@@ -102,7 +104,19 @@ impl EdgeServer {
         Ok(Self {
             state,
             config: server_config,
+            admin_config: None,
         })
+    }
+
+    /// Enable Admin API with the given configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `prefix` - URL prefix for Admin API endpoints (e.g., "/admin")
+    /// * `token` - Authentication token required in X-Admin-Token header
+    pub fn with_admin(mut self, prefix: String, token: String) -> Self {
+        self.admin_config = Some(AdminRouterConfig { prefix, token });
+        self
     }
 
     /// Get a reference to the application state.
@@ -126,7 +140,8 @@ impl EdgeServer {
     ///
     /// Returns an error if the server cannot bind to the address.
     pub async fn run(self) -> Result<(), RuntimeError> {
-        let app = build_router(self.state, self.config.request_timeout());
+        let app =
+            build_router_with_admin(self.state, self.config.request_timeout(), self.admin_config);
 
         let listener = TcpListener::bind(&self.config.bind_addr)
             .await
@@ -156,7 +171,7 @@ impl EdgeServer {
     /// and shut down the server.
     pub async fn start_test(runtime_config: &RuntimeConfig) -> Result<TestHandle, RuntimeError> {
         let state = AppState::new(runtime_config)?;
-        let app = build_router(state.clone(), Duration::from_secs(30));
+        let app = build_router_with_admin(state.clone(), Duration::from_secs(30), None);
 
         let listener = TcpListener::bind("127.0.0.1:0")
             .await

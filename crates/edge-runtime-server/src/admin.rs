@@ -60,8 +60,8 @@ pub fn build_admin_router(admin_state: AdminState) -> Router<AppState> {
     Router::new()
         .route("/modules", post(upload_module))
         .route("/modules", get(list_modules_admin))
-        .route("/modules/{id}", get(get_module_info))
-        .route("/modules/{id}", delete(delete_module))
+        .route("/modules/:id", get(get_module_info))
+        .route("/modules/:id", delete(delete_module))
         .layer(Extension(admin_state))
 }
 

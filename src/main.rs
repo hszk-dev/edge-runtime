@@ -88,7 +88,15 @@ async fn main() -> anyhow::Result<()> {
     info!(bind_addr = %server_config.bind_addr, "Configuration loaded");
 
     // Create server
-    let server = EdgeServer::new(&runtime_config, server_config.clone())?;
+    let mut server = EdgeServer::new(&runtime_config, server_config.clone())?;
+
+    // Enable Admin API if configured
+    if admin_config.is_configured() {
+        server = server.with_admin(
+            admin_config.prefix.clone(),
+            admin_config.token.clone().unwrap(),
+        );
+    }
 
     // Load modules from CLI options
     load_modules_from_cli(&cli, server.state())?;
