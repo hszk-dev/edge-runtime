@@ -183,8 +183,10 @@ pub fn create_store(
     }
 
     // Set epoch deadline for timeout-based interruption
+    // The deadline is relative to current epoch; use timeout_ms as ticks
+    // (assuming 1 epoch increment per millisecond from background task)
     if engine.config().epoch_interruption {
-        store.epoch_deadline_trap();
+        store.set_epoch_deadline(config.timeout_ms);
     }
 
     Ok(store)
