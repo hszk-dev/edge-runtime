@@ -4,7 +4,28 @@ members = [
     "crates/edge-runtime-common",
     "crates/edge-runtime-core",
     "crates/edge-runtime-host",
+    "crates/edge-runtime-server",
 ]
+
+[package]
+name = "edge-runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "High-density, low-latency serverless edge runtime"
+
+[[bin]]
+name = "edge-runtime"
+path = "src/main.rs"
+
+[dependencies]
+edge-runtime-common.workspace = true
+edge-runtime-server.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
 
 [workspace.package]
 version = "0.1.0"
@@ -19,6 +40,7 @@ authors = ["Your Name <your.email@example.com>"]
 edge-runtime-common = { path = "crates/edge-runtime-common" }
 edge-runtime-core = { path = "crates/edge-runtime-core" }
 edge-runtime-host = { path = "crates/edge-runtime-host" }
+edge-runtime-server = { path = "crates/edge-runtime-server" }
 
 # Wasmtime (v28 - latest stable with component-model support)
 wasmtime = { version = "28", default-features = false, features = [

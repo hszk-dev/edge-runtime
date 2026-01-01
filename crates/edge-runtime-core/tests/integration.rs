@@ -12,42 +12,7 @@ use std::sync::Arc;
 use edge_runtime_common::{EngineConfig, ExecutionConfig};
 use edge_runtime_core::store::{LogLevel, create_store};
 use edge_runtime_core::{CompiledModule, ExecutionResult, InstanceRunner, WasmEngine};
-use edge_runtime_host::logging::{LoggingHost, level_from_i32};
-use wasmtime::Caller;
-
-/// Register the logging host function on the linker.
-fn register_logging(runner: &mut InstanceRunner) {
-    runner
-        .linker_mut()
-        .func_wrap(
-            "env",
-            "log",
-            |mut caller: Caller<'_, edge_runtime_core::WorkerContext>,
-             level: i32,
-             ptr: i32,
-             len: i32| {
-                let memory = caller
-                    .get_export("memory")
-                    .and_then(wasmtime::Extern::into_memory)
-                    .expect("memory export not found");
-
-                // Read message from guest memory and convert to owned String
-                // to avoid borrow checker issues with caller.data_mut()
-                #[allow(clippy::cast_sign_loss)]
-                let message = {
-                    let data = memory.data(&caller);
-                    let start = ptr as usize;
-                    let end = start + len as usize;
-                    std::str::from_utf8(&data[start..end])
-                        .unwrap_or("<invalid utf8>")
-                        .to_string()
-                };
-
-                LoggingHost::log(caller.data_mut(), level_from_i32(level), &message);
-            },
-        )
-        .expect("Failed to register log function");
-}
+use edge_runtime_host::linker::register_all;
 
 // ============================================================================
 // Test: Basic Execution
@@ -201,8 +166,8 @@ async fn test_host_function_logging() {
     let engine = WasmEngine::new(&engine_config).unwrap();
     let mut runner = InstanceRunner::new(Arc::new(engine.inner().clone()));
 
-    // Register the logging host function
-    register_logging(&mut runner);
+    // Register all host functions
+    register_all(runner.linker_mut()).unwrap();
 
     let compiled = CompiledModule::from_wat(engine.inner(), wat).unwrap();
 
@@ -298,7 +263,8 @@ async fn test_multiple_logs() {
     let engine = WasmEngine::new(&engine_config).unwrap();
     let mut runner = InstanceRunner::new(Arc::new(engine.inner().clone()));
 
-    register_logging(&mut runner);
+    // Register all host functions
+    register_all(runner.linker_mut()).unwrap();
 
     let compiled = CompiledModule::from_wat(engine.inner(), wat).unwrap();
 
