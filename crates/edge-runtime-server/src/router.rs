@@ -50,11 +50,11 @@ pub fn build_router_with_admin(
     // Function execution routes
     let function_routes = Router::new()
         // POST /functions/:function_id - Execute with request body
-        .route("/functions/{function_id}", post(handle_function))
+        .route("/functions/:function_id", post(handle_function))
         // GET /functions/:function_id - Execute without body
-        .route("/functions/{function_id}", get(handle_function))
+        .route("/functions/:function_id", get(handle_function))
         // ANY /invoke/:function_id - Simplified invoke endpoint
-        .route("/invoke/{function_id}", any(handle_function));
+        .route("/invoke/:function_id", any(handle_function));
 
     // Health and monitoring routes
     let health_routes = Router::new()
