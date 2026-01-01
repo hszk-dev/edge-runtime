@@ -7,6 +7,7 @@
 //! - Request/response transformation
 //! - WebAssembly module execution
 //! - Health and readiness checks
+//! - Admin API for module management
 //!
 //! # Quick Start
 //!
@@ -26,6 +27,7 @@
 //! }
 //! ```
 
+pub mod admin;
 pub mod handler;
 pub mod request;
 pub mod response;
@@ -33,5 +35,7 @@ pub mod router;
 pub mod server;
 pub mod state;
 
+pub use admin::{AdminState, build_admin_router};
+pub use router::{AdminRouterConfig, build_router_with_admin};
 pub use server::{EdgeServer, ServerConfig};
 pub use state::AppState;

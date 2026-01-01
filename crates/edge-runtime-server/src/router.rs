@@ -11,8 +11,17 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
+use crate::admin::{AdminState, build_admin_router};
 use crate::handler::{handle_function, health_check, list_modules, readiness_check};
 use crate::state::AppState;
+
+/// Admin API configuration for router.
+pub struct AdminRouterConfig {
+    /// Admin API prefix (e.g., "/admin").
+    pub prefix: String,
+    /// Admin authentication token.
+    pub token: String,
+}
 
 /// Build the main application router.
 ///
@@ -23,6 +32,21 @@ use crate::state::AppState;
 /// - `GET /ready` - Readiness check
 /// - `GET /modules` - List loaded modules
 pub fn build_router(state: AppState, request_timeout: Duration) -> Router {
+    build_router_with_admin(state, request_timeout, None)
+}
+
+/// Build the main application router with optional Admin API.
+///
+/// # Arguments
+///
+/// * `state` - Application state
+/// * `request_timeout` - Request timeout duration
+/// * `admin_config` - Optional Admin API configuration
+pub fn build_router_with_admin(
+    state: AppState,
+    request_timeout: Duration,
+    admin_config: Option<AdminRouterConfig>,
+) -> Router {
     // Function execution routes
     let function_routes = Router::new()
         // POST /functions/:function_id - Execute with request body
@@ -38,11 +62,21 @@ pub fn build_router(state: AppState, request_timeout: Duration) -> Router {
         .route("/ready", get(readiness_check))
         .route("/modules", get(list_modules));
 
-    // Combine all routes
-    Router::new()
-        .merge(function_routes)
-        .merge(health_routes)
-        // Add middleware layers
+    // Start building the router
+    let mut router = Router::new().merge(function_routes).merge(health_routes);
+
+    // Add Admin API if configured
+    if let Some(config) = admin_config {
+        let admin_state = AdminState {
+            app_state: state.clone(),
+            admin_token: config.token,
+        };
+        let admin_router = build_admin_router(admin_state);
+        router = router.nest(&config.prefix, admin_router);
+    }
+
+    // Add middleware layers
+    router
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::new(request_timeout))
         .layer(
