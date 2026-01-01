@@ -1,0 +1,101 @@
+/// HTTP Outbound interface for guest components.
+///
+/// This interface allows guest code to make outbound HTTP requests
+/// to external services. All requests are subject to permission checks
+/// and rate limiting by the host runtime.
+
+package edge:runtime@0.1.0;
+
+/// HTTP outbound interface imported by guest components.
+interface http-outbound {
+    /// HTTP method enumeration.
+    enum method {
+        get,
+        head,
+        post,
+        put,
+        delete,
+        patch,
+        options,
+    }
+
+    /// HTTP request configuration.
+    record request {
+        /// HTTP method to use.
+        method: method,
+        /// Target URI (must be allowed by runtime permissions).
+        uri: string,
+        /// Request headers.
+        headers: list<tuple<string, string>>,
+        /// Optional request body.
+        body: option<list<u8>>,
+        /// Request timeout in milliseconds (optional, default: 30000).
+        timeout-ms: option<u32>,
+    }
+
+    /// HTTP response from an outbound request.
+    record response {
+        /// HTTP status code.
+        status: u16,
+        /// Response headers.
+        headers: list<tuple<string, string>>,
+        /// Response body.
+        body: list<u8>,
+    }
+
+    /// Error types for HTTP operations.
+    enum http-error {
+        /// The target URI is not allowed by runtime permissions.
+        permission-denied,
+        /// The request timed out.
+        timeout,
+        /// DNS resolution failed.
+        dns-error,
+        /// TCP connection failed.
+        connection-failed,
+        /// TLS/SSL handshake failed.
+        tls-error,
+        /// The response body was too large.
+        body-too-large,
+        /// Rate limit exceeded.
+        rate-limited,
+        /// Other unspecified error.
+        other,
+    }
+
+    /// Perform an HTTP request.
+    ///
+    /// # Arguments
+    /// * `req` - The HTTP request configuration
+    ///
+    /// # Returns
+    /// * `Ok(response)` - The HTTP response on success
+    /// * `Err(http-error)` - An error if the request failed
+    ///
+    /// # Security
+    /// The host runtime will:
+    /// 1. Verify the target URI is in the allowed hosts list
+    /// 2. Block requests to private/internal networks (SSRF protection)
+    /// 3. Apply rate limiting per function execution
+    ///
+    /// # Example (Rust guest)
+    /// ```rust,ignore
+    /// let response = http_outbound::fetch(Request {
+    ///     method: Method::Get,
+    ///     uri: "https://api.example.com/data".into(),
+    ///     headers: vec![],
+    ///     body: None,
+    ///     timeout_ms: Some(5000),
+    /// })?;
+    /// ```
+    fetch: func(req: request) -> result<response, http-error>;
+
+    /// Convenience function for GET requests.
+    ///
+    /// # Arguments
+    /// * `uri` - The target URI
+    ///
+    /// # Returns
+    /// The response body as bytes, or an error.
+    get: func(uri: string) -> result<list<u8>, http-error>;
+}

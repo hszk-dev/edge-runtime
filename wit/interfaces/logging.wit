@@ -1,0 +1,53 @@
+/// Logging interface for guest components.
+///
+/// This interface allows guest code to emit structured logs that are
+/// captured by the host runtime and associated with the current request.
+
+package edge:runtime@0.1.0;
+
+/// Logging interface imported by guest components.
+interface logging {
+    /// Log level enumeration.
+    enum log-level {
+        /// Debug-level messages (most verbose).
+        debug,
+        /// Informational messages.
+        info,
+        /// Warning messages.
+        warn,
+        /// Error messages (most severe).
+        error,
+    }
+
+    /// Emit a log message at the specified level.
+    ///
+    /// # Arguments
+    /// * `level` - The severity level of the log message
+    /// * `message` - The log message content
+    ///
+    /// # Example (Rust guest)
+    /// ```rust,ignore
+    /// logging::log(LogLevel::Info, "Processing request");
+    /// ```
+    log: func(level: log-level, message: string);
+
+    /// Emit a debug-level log message.
+    ///
+    /// Convenience function equivalent to `log(log-level::debug, message)`.
+    debug: func(message: string);
+
+    /// Emit an info-level log message.
+    ///
+    /// Convenience function equivalent to `log(log-level::info, message)`.
+    info: func(message: string);
+
+    /// Emit a warning-level log message.
+    ///
+    /// Convenience function equivalent to `log(log-level::warn, message)`.
+    warn: func(message: string);
+
+    /// Emit an error-level log message.
+    ///
+    /// Convenience function equivalent to `log(log-level::error, message)`.
+    error: func(message: string);
+}

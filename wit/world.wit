@@ -1,0 +1,50 @@
+/// Edge Runtime World Definition
+///
+/// This defines the interface contract between the edge runtime (host)
+/// and guest WebAssembly components.
+
+package edge:runtime@0.1.0;
+
+/// The main world that guest components implement.
+world edge-worker {
+    /// Import logging capabilities from the host.
+    import logging;
+
+    /// Import HTTP outbound capabilities from the host.
+    import http-outbound;
+
+    /// Export the main handler function.
+    /// This is called by the runtime for each request.
+    export run: func() -> result<_, string>;
+}
+
+/// Alternative world for HTTP request/response handling.
+world http-handler {
+    import logging;
+    import http-outbound;
+
+    /// Handle an incoming HTTP request and return a response.
+    export handle: func(request: http-request) -> result<http-response, string>;
+}
+
+/// HTTP request record for the http-handler world.
+record http-request {
+    /// HTTP method (GET, POST, etc.)
+    method: string,
+    /// Request URI
+    uri: string,
+    /// Request headers
+    headers: list<tuple<string, string>>,
+    /// Optional request body
+    body: option<list<u8>>,
+}
+
+/// HTTP response record for the http-handler world.
+record http-response {
+    /// HTTP status code
+    status: u16,
+    /// Response headers
+    headers: list<tuple<string, string>>,
+    /// Response body
+    body: list<u8>,
+}

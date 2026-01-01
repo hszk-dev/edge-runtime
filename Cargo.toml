@@ -1,0 +1,84 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/edge-runtime-common",
+    "crates/edge-runtime-core",
+    "crates/edge-runtime-host",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85.0"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/example/edge-runtime"
+authors = ["Your Name <your.email@example.com>"]
+
+[workspace.dependencies]
+# Internal crates
+edge-runtime-common = { path = "crates/edge-runtime-common" }
+edge-runtime-core = { path = "crates/edge-runtime-core" }
+edge-runtime-host = { path = "crates/edge-runtime-host" }
+
+# Wasmtime (v28 - latest stable with component-model support)
+wasmtime = { version = "28", default-features = false, features = [
+    "async",
+    "component-model",
+    "cranelift",
+    "pooling-allocator",
+    "cache",
+    "wat",
+] }
+wasmtime-wasi = { version = "28" }
+
+# Async Runtime
+tokio = { version = "1.43", features = ["full", "tracing"] }
+
+# HTTP Client (for host functions)
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "json",
+] }
+
+# Error Handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Configuration
+config = "0.14"
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = [
+    "env-filter",
+    "json",
+    "fmt",
+] }
+
+# Concurrency
+dashmap = "6.1"
+parking_lot = "0.12"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4"] }
+url = "2.5"
+async-trait = "0.1"
+
+# Testing
+tokio-test = "0.4"
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Allow some pedantic lints
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
