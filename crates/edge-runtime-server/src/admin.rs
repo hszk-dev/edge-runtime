@@ -24,6 +24,7 @@ use axum::{
 };
 use axum_extra::extract::Multipart;
 use serde::Serialize;
+use subtle::ConstantTimeEq;
 use tracing::{info, instrument, warn};
 
 use crate::state::AppState;
@@ -66,10 +67,19 @@ pub fn build_admin_router(admin_state: AdminState) -> Router<AppState> {
 }
 
 /// Verify the admin token from request headers.
+///
+/// Uses constant-time comparison to prevent timing attacks.
 fn verify_token(headers: &HeaderMap, expected: &str) -> Result<(), (StatusCode, &'static str)> {
     match headers.get("X-Admin-Token") {
         Some(token) => {
-            if token.to_str().unwrap_or("") == expected {
+            let token_bytes = token.to_str().unwrap_or("").as_bytes();
+            let expected_bytes = expected.as_bytes();
+
+            // Use constant-time comparison to prevent timing attacks.
+            // Length check is still vulnerable, but token length is not secret.
+            if token_bytes.len() == expected_bytes.len()
+                && bool::from(token_bytes.ct_eq(expected_bytes))
+            {
                 Ok(())
             } else {
                 Err((StatusCode::UNAUTHORIZED, "Invalid admin token"))

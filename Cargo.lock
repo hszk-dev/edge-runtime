@@ -738,6 +738,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "subtle",
  "tokio",
  "tokio-test",
  "tower 0.4.13",

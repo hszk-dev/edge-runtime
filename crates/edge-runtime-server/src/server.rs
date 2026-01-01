@@ -140,6 +140,10 @@ impl EdgeServer {
     ///
     /// Returns an error if the server cannot bind to the address.
     pub async fn run(self) -> Result<(), RuntimeError> {
+        // Clone engine before moving state to router.
+        // This is needed for the epoch increment background task.
+        let epoch_engine = self.state.engine().clone();
+
         let app =
             build_router_with_admin(self.state, self.config.request_timeout(), self.admin_config);
 
@@ -148,6 +152,16 @@ impl EdgeServer {
             .map_err(|e| RuntimeError::invalid_config(format!("Failed to bind: {e}")))?;
 
         info!(addr = %self.config.bind_addr, "Starting HTTP server");
+
+        // Start epoch increment background task for timeout-based interruption.
+        // This increments the epoch counter every 1ms, enabling epoch_deadline to work.
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_millis(1));
+            loop {
+                interval.tick().await;
+                epoch_engine.increment_epoch();
+            }
+        });
 
         if self.config.graceful_shutdown {
             axum::serve(listener, app)
